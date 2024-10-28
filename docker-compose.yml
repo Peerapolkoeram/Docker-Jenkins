@@ -1,12 +1,45 @@
 version: '3.8'
 
 services:
-  jenkins:
-    container_name: jenkins
-    image: jenkins/jenkins
-    ports:
-    - "50000:50000"
-    - "9080:8080"
+  # Docker-in-Docker (dind) Service
+  docker:
+    image: docker:dind
+    container_name: jenkins-docker
+    privileged: true
+    environment:
+      DOCKER_TLS_CERTDIR: /certs
     volumes:
-      - ./jenkins_home:/var/jenkins_home
-    restart: always
+      - ./jenkins-docker-certs:/certs/client
+      - ./jenkins-data:/var/jenkins_home
+    networks:
+      - jenkins
+    expose:
+      - "2376"
+
+  # Jenkins Service
+  jenkins:
+    build: .  # สร้าง Jenkins จาก Dockerfile
+    container_name: jenkins
+    privileged: true
+    environment:
+      DOCKER_HOST: tcp://docker:2376
+      DOCKER_CERT_PATH: /certs/client
+      DOCKER_TLS_VERIFY: 1
+    volumes:
+      - ./jenkins-data:/var/jenkins_home
+      - ./jenkins-docker-certs:/certs/client:ro
+    ports:
+      - "9999:8080"
+      - "50000:50000"
+    networks:
+      - jenkins
+    depends_on:
+      - docker
+    restart: on-failure
+
+networks:
+  jenkins:
+
+volumes:
+  jenkins-data:
+  jenkins-docker-certs:
