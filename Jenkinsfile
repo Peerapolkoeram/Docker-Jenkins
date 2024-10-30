@@ -36,6 +36,13 @@ pipeline {
                 }
             }
         }
+        stage('Build') {
+            steps {
+                sshagent(['server-1']) {
+                    sh 'ssh [USERNAME]@[SERVER IP] "cd /home/[USERNAME]/jenkins/[PROJECTNAME] && mvn clean install"'
+                }
+            }
+        }
         stage('Scan SonarQube') {
             steps {
                 sshagent(['server-1']) {
@@ -43,10 +50,10 @@ pipeline {
                 }
             }
         }
-        stage('Build') {
+        stage('Unit test') {
             steps {
                 sshagent(['server-1']) {
-                    sh 'ssh [USERNAME]@[SERVER IP] "cd /home/[USERNAME]/jenkins/[PROJECTNAME] && mvn clean install"'
+                    sh 'ssh [USERNAME]@[SERVER IP] "cd /home/[USERNAME]/jenkins/[PROJECTNAME] && mvn test"'
                 }
             }
         }
